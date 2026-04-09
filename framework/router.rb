@@ -4,6 +4,8 @@ class Router
   def call(env)
     request = Rack::Request.new(env)
 
+    puts "method=#{request.request_method} path=#{request.path}"
+
     case request.path
     when "/posts"
       controller = PostsController.new
