@@ -1,6 +1,12 @@
 require "pg"
 
 class Model
+  attr_reader :attributes
+
+  def initialize(attributes)
+    @attributes = attributes
+  end
+
   def self.subclasses
     @subclasses ||= []
   end
@@ -12,7 +18,9 @@ class Model
 
   def self.connection
     @connection ||= begin
-      PG.connect(dbname: "sql_compiler_development")
+      PG.connect(dbname: "sql_compiler_development").tap do |connection|
+        connection.type_map_for_results = PG::BasicTypeMapForResults.new(connection)
+      end
     rescue PG::ConnectionBad => e
       if e.message.include? %(database "sql_compiler_development" does not exist)
         PG.connect(dbname: "postgres").exec("CREATE DATABASE sql_compiler_development")
@@ -24,12 +32,31 @@ class Model
   end
 
   module ClassMethods
+    def attribute(name)
+      name = name.to_s
+
+      define_method(name) do
+        @attributes[name]
+      end
+
+      define_method("#{name}=") do |value|
+        @attributes[name] = value
+      end
+    end
+
     def table_name
       name.downcase.pluralize
     end
 
     def all
-      connection.exec("SELECT * FROM #{table_name}").to_a
+      connection.exec("SELECT * FROM #{table_name}").map { |attributes| new(attributes) }
+    end
+
+    def find(id)
+      result = connection.exec("SELECT * FROM #{table_name} WHERE id = #{id} LIMIT 1")
+      raise "Record not found" if result.none?
+
+      new(result.first)
     end
 
     def create(**attributes)
