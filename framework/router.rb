@@ -1,3 +1,5 @@
+require "rack"
+
 class Router
   def call(env)
     request = Rack::Request.new(env)

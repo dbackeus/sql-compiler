@@ -2,7 +2,7 @@ workers 2
 threads 3
 
 log_format :plain
-log_level :debug
+log_level :info
 
 request_timeout 5
 

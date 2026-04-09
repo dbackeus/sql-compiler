@@ -11,3 +11,5 @@ end
 Dir.glob("#{root}/app/**/*.rb").each do |file|
   require file
 end
+
+ProjectionRegistry.load!
